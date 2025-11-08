@@ -1,0 +1,89 @@
+entities 
+ Issue
+    transactionId (uuid)
+    issueType (enum)
+    subject (string)
+    description (string)
+    State (enum: created, pending, closed) (created at user create, pending at agent pick, closed at agent resolution)
+    resolution (string)
+    userId (uuid)
+    userEmail (string)
+    AgentId (uuid, null at start)
+
+User 
+    userId (uuid)
+    name  (string)
+    email (string)
+    active_products (enum: gold, fd, insurance, mutual-fund..etc)
+    active_issues (list)
+    created_issues (list)
+
+Agent 
+    agentId (uuid)
+    name (string)
+    email (string)
+    issueType (List of supported product type enum)
+    rating  (dict){issueType1:rating, issueType2:rating}
+    resolved_issues (list of issue ids or empty)
+    active_issue (id of issue or null)
+    is_ocupied (true/false)
+
+
+Strategy:
+    strategyId (uuid)
+    StrategyType (enum:FCFS,rating)
+
+Transaction:
+    id
+    userId
+    product_type
+
+
+Enums 
+    Product types (gold, fd, insurance, mutual-fund..etc)
+    Issue states (created, pending, closed)
+    StrategyTypes
+
+
+Classes
+    user 
+        create_user, (name, email, active_products) 
+        delete_user, (userid)
+        get_user_details, (userId)
+        get_issues (userId)
+    
+    Issue
+        create_issue (transactionId, issueType, subject, description, email)
+        update_issue (issueId, status, resolution)
+        get_issue (userId/userEmail)
+
+    Agents
+        add_agent (agentEmail, agentName ,List<issueType>)
+        update_agent  (agentId, )
+        viewAgentsWorkHistory()
+
+    Routing_strategy
+        create_strategy
+        update_strategy
+        assign_agent (active_strategy, issue, active_agents)
+            iterate all active_agents and assign weights based on 
+            issue type and active_routing_strategy return agent with max weight
+
+    ResolutionSystem: (with main function)
+        init 
+            active routing strategy
+            supported routing strategies
+            supported agents
+            occupied agents
+            pending_issues
+            resolved_issues
+        create_user, delete, get_user_details
+        create_agent, update_agent
+        create_issue
+        update_issue ("I3", "In Progress", "Waiting for payment 
+confirmation")
+        resolve_issue ("I3", "PaymentFailed debited amount will get 
+reversed")
+        view_agents_work_history() A1 -> {I1, I3}
+
+
