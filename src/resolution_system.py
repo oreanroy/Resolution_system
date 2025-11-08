@@ -114,6 +114,9 @@ class ResolutionSystem:
         self.issue_service.mark_waitlisted(issue_id)
         return f"Issue {issue_id} added to waitlist of Agent {chosen_agent.agent_id}"
 
+    def get_issues(self, filters: Optional[Dict[str, Any]] = None) -> List[Issue]:
+        return self.issue_service.get_issue(filters)
+
     def view_agents_work_history(self) -> Dict[str, List[str]]:
         return self.agent_service.view_agents_work_history()
 
