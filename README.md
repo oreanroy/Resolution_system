@@ -22,6 +22,28 @@
   - Maintains pending/resolved registries plus agent waitlists so the sample scenario (`assignIssue` → waitlist → auto-reassign) behaves exactly as described.
   - The `main()` routine in `src/resolution_system.py` follows the provided example sequence to validate end-to-end flow.
 
+### Sample Output
+```
+=== Resolution System Demo ===
+Users created: U1, U2
+Agents created: A1, A2
+Issues created: I1, I2, I3
+Assigning issues...
+Issue I1 assigned to agent A1
+Issue I2 assigned to agent A2
+Issue I3 added to waitlist of Agent A1
+Issue I1 resolved
+Issue I3 updated to In Progress
+Issue I3 resolved
+Agent work history:
+A1 ['I1', 'I3']
+A2 []
+Pending issues: ['I2']
+Resolved issues: ['I1', 'I3']
+```
+
+![Console output showing waitlist assignment flow](running_output.png)
+
 
 ## Rough Design Snapshot
 - **Entities**
