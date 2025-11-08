@@ -83,6 +83,13 @@ class IssueService:
         issue.resolution = resolution
         return True
 
+    def mark_waitlisted(self, issue_id: str) -> bool:
+        issue = self._issues.get(issue_id)
+        if not issue:
+            return False
+        issue.state = IssueState.WAITING
+        return True
+
     def list_issues_for_user(self, user_id: str) -> List[Issue]:
         issue_ids = self._issues_by_user.get(user_id, [])
         return [self._issues[iid] for iid in issue_ids if iid in self._issues]

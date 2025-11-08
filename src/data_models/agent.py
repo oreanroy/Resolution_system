@@ -21,6 +21,10 @@ class Agent:
         return not self.is_occupied and self.active_issue_id is None and issue_type in self.supported_issue_types
 
     def record_assignment(self, issue_id: str) -> None:
+        try:
+            self.waitlist.remove(issue_id)
+        except ValueError:
+            pass
         self.active_issue_id = issue_id
         self.is_occupied = True
 
@@ -29,3 +33,12 @@ class Agent:
             self.resolved_issue_ids.append(issue_id)
         self.active_issue_id = None
         self.is_occupied = False
+
+    def enqueue_issue(self, issue_id: str) -> None:
+        if issue_id not in self.waitlist and issue_id != self.active_issue_id:
+            self.waitlist.append(issue_id)
+
+    def take_next_from_waitlist(self) -> Optional[str]:
+        if not self.waitlist:
+            return None
+        return self.waitlist.popleft()

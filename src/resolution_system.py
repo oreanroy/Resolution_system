@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional
 
+from src.data_models.agent import Agent
 from src.enums import IssueState, ProductType, StrategyType
 from src.data_models.issue import Issue
 from src.services import AgentService, IssueService, RoutingStrategyService, UserService
@@ -83,10 +84,13 @@ class ResolutionSystem:
             self._mark_issue_closed(issue)
         return True
 
-    def assign_issue(self, issue_id: str) -> Optional[str]:
+    def assign_issue(self, issue_id: str) -> str:
         issue = self.issue_service.get_issue_by_id(issue_id)
         if not issue:
-            return None
+            return f"Issue {issue_id} not found"
+        if issue.agent_id:
+            return f"Issue {issue_id} is already assigned to agent {issue.agent_id}"
+
         agent_map = self.agent_service.list_agents()
         agent_id = self.strategy_service.assign_agent(issue, agent_map.values())
         if agent_id:
@@ -96,7 +100,19 @@ class ResolutionSystem:
             self.issue_service.assign_agent(issue_id, agent_id)
             if issue_id not in self._pending_issues:
                 self._pending_issues.append(issue_id)
-        return agent_id
+            return f"Issue {issue_id} assigned to agent {agent_id}"
+
+        supporting_agents = [
+            agent for agent in agent_map.values() if issue.issue_type in agent.supported_issue_types
+        ]
+        if not supporting_agents:
+            return f"No agent available to handle issue type {issue.issue_type.value}"
+
+        supporting_agents.sort(key=lambda agent: (len(agent.waitlist), agent.agent_id))
+        chosen_agent = supporting_agents[0]
+        chosen_agent.enqueue_issue(issue_id)
+        self.issue_service.mark_waitlisted(issue_id)
+        return f"Issue {issue_id} added to waitlist of Agent {chosen_agent.agent_id}"
 
     def view_agents_work_history(self) -> Dict[str, List[str]]:
         return self.agent_service.view_agents_work_history()
@@ -119,6 +135,19 @@ class ResolutionSystem:
             agent = self.agent_service.get_agent(issue.agent_id)
             if agent:
                 agent.record_resolution(issue_id)
+                self._assign_next_from_waitlist(agent)
+
+    def _assign_next_from_waitlist(self, agent: Agent) -> None:
+        next_issue_id = agent.take_next_from_waitlist()
+        if not next_issue_id:
+            return
+        next_issue = self.issue_service.get_issue_by_id(next_issue_id)
+        if not next_issue:
+            return
+        agent.record_assignment(next_issue_id)
+        self.issue_service.assign_agent(next_issue_id, agent.agent_id)
+        if next_issue_id not in self._pending_issues:
+            self._pending_issues.append(next_issue_id)
 
     @staticmethod
     def main() -> None:
@@ -151,19 +180,15 @@ class ResolutionSystem:
 
         # Resolve first issue to free up agent capacity
         system.resolve_issue(issue1, "Payment auto-reconciled")
-        print("Issue 1 resolved")
-
-        # Re-attempt assignment for pending issue now that an agent is free
-        reassigned_agent = system.assign_issue(issue3)
-        print("Reassigning issue 3...", reassigned_agent)
+        print(f"Issue {issue1} resolved")
 
         # Update issue
         system.update_issue(issue3, "In Progress", "Waiting for confirmation")
-        print("Issue 3 updated to In Progress")
+        print(f"Issue {issue3} updated to In Progress")
 
         # Resolve issue
         system.resolve_issue(issue3, "Payment reversed")
-        print("Issue 3 resolved")
+        print(f"Issue {issue3} resolved")
 
         # View agent history
         print("Agent work history:")

@@ -3,6 +3,7 @@ from enum import Enum
 
 class IssueState(Enum):
     CREATED = "created"
+    WAITING = "waiting"
     PENDING = "pending"
     CLOSED = "closed"
 
@@ -16,7 +17,9 @@ class IssueState(Enum):
             "open": cls.CREATED,
             "pending": cls.PENDING,
             "in progress": cls.PENDING,
-            "waiting": cls.PENDING,
+            "waiting": cls.WAITING,
+            "waitlist": cls.WAITING,
+            "queued": cls.WAITING,
             "closed": cls.CLOSED,
             "resolved": cls.CLOSED,
         }
