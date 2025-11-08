@@ -57,15 +57,24 @@ class ResolutionSystem:
         return issue_id
 
     def update_issue(self, issue_id: str, status: Any, resolution: Optional[str] = None) -> bool:
+        issue = self.issue_service.get_issue_by_id(issue_id)
+        if not issue:
+            return False
+        target_state = IssueState.from_value(status)
+        if target_state == IssueState.CLOSED and not issue.agent_id:
+            return False
         updated = self.issue_service.update_issue(issue_id, status, resolution)
         if not updated:
             return False
         issue = self.issue_service.get_issue_by_id(issue_id)
         if issue and issue.state == IssueState.CLOSED:
             self._mark_issue_closed(issue)
-        return updated
+        return True
 
     def resolve_issue(self, issue_id: str, resolution: str) -> bool:
+        issue = self.issue_service.get_issue_by_id(issue_id)
+        if not issue or not issue.agent_id:
+            return False
         resolved = self.issue_service.resolve_issue(issue_id, resolution)
         if not resolved:
             return False
@@ -139,6 +148,14 @@ class ResolutionSystem:
         print(system.assign_issue(issue1))
         print(system.assign_issue(issue2))
         print(system.assign_issue(issue3))
+
+        # Resolve first issue to free up agent capacity
+        system.resolve_issue(issue1, "Payment auto-reconciled")
+        print("Issue 1 resolved")
+
+        # Re-attempt assignment for pending issue now that an agent is free
+        reassigned_agent = system.assign_issue(issue3)
+        print("Reassigning issue 3...", reassigned_agent)
 
         # Update issue
         system.update_issue(issue3, "In Progress", "Waiting for confirmation")
